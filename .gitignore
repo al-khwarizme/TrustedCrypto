@@ -1,0 +1,46 @@
+# ─── Node / JS ────────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-error.log
+.yarn/
+
+# ─── Hardhat ──────────────────────────────────────────────────────────────────
+contracts/artifacts/
+contracts/cache/
+contracts/typechain-types/
+contracts/coverage/
+contracts/coverage.json
+
+# ─── Environment & secrets ────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ─── Go ───────────────────────────────────────────────────────────────────────
+protocol/bin/
+protocol/vendor/
+
+# ─── React Native ─────────────────────────────────────────────────────────────
+mobile/.expo/
+mobile/android/
+mobile/ios/
+mobile/.gradle/
+mobile/build/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# ─── IDEs ─────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/settings.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ─── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db

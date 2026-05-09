@@ -159,16 +159,27 @@ contract TRCUtility is ERC20, AccessControl, ReentrancyGuard, Pausable {
     }
 
     /**
-     * @dev Hook: enforces wallet cap on every transfer to a non-zero address.
+     * @dev Hook: enforces wallet cap and updates cumulative aggregate balance per DID.
      */
-    function _update(address from, address to, uint256 value) internal override {
-        if (walletCapContract != address(0) && to != address(0) && from != address(0)) {
+    function _update(address from, address to, uint256 value) internal override whenNotPaused {
+        // Enforce cap for transfers AND mints (from == address(0)).
+        // Burns (to == address(0)) are exempt — reducing supply can't violate a cap.
+        if (walletCapContract != address(0) && to != address(0)) {
             IWalletCap(walletCapContract).enforceCapOnTransfer(to, value);
         }
         super._update(from, to, value);
+        if (walletCapContract != address(0)) {
+            if (to != address(0)) {
+                IWalletCap(walletCapContract).recordTransfer(to, int256(value));
+            }
+            if (from != address(0)) {
+                IWalletCap(walletCapContract).recordTransfer(from, -int256(value));
+            }
+        }
     }
 }
 
 interface IWalletCap {
     function enforceCapOnTransfer(address wallet, uint256 additionalAmount) external view;
+    function recordTransfer(address wallet, int256 delta) external;
 }

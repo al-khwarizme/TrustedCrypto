@@ -234,4 +234,53 @@ describe("TRCGold", function () {
       ).to.be.reverted;
     });
   });
+
+  // -------------------------------------------------------------------------
+  // recordTransfer bug regression: cap enforced on mint, pause blocks transfers
+  // -------------------------------------------------------------------------
+
+  describe("WalletCap integration (bug regression)", () => {
+    let walletCap: any;
+    const DID_REGISTRY_ROLE = ethers.keccak256(ethers.toUtf8Bytes("DID_REGISTRY_ROLE"));
+    const TOKEN_ROLE        = ethers.keccak256(ethers.toUtf8Bytes("TOKEN_ROLE"));
+    const ORACLE_ROLE       = ethers.keccak256(ethers.toUtf8Bytes("ORACLE_ROLE"));
+    const USER1_DID = ethers.keccak256(ethers.toUtf8Bytes("did:trc:user1"));
+    const CAP_AMOUNT = ethers.parseEther("1000");   // totalSupply=1e6, bps=100 → cap=100 — use 1000 tokens
+    const TOTAL_SUPPLY_BIG = ethers.parseEther("100000"); // so cap = 1% = 1000
+
+    beforeEach(async () => {
+      const WalletCapFactory = await ethers.getContractFactory("WalletCap");
+      walletCap = await WalletCapFactory.deploy(admin.address);
+      await walletCap.waitForDeployment();
+
+      await walletCap.grantRole(DID_REGISTRY_ROLE, admin.address);
+      await walletCap.grantRole(TOKEN_ROLE, await trcGold.getAddress());
+      await walletCap.grantRole(ORACLE_ROLE, admin.address);
+
+      // participantCount < 10,000 → bps = 100 → cap = 1% of totalNetworkSupply
+      await walletCap.updateNetworkStats(100n, TOTAL_SUPPLY_BIG);
+      await walletCap.registerAddress(USER1_DID, user1.address);
+      await trcGold.setWalletCapContract(await walletCap.getAddress());
+    });
+
+    it("enforces cap on mint (bug fix: from == address(0) was previously bypassing cap)", async () => {
+      // Mint exactly at the cap — should succeed
+      await trcGold.connect(reserve).mint(user1.address, CAP_AMOUNT, DEPOSIT_PROOF);
+      expect(await trcGold.balanceOf(user1.address)).to.equal(CAP_AMOUNT);
+
+      // Mint one more token over the cap — must revert
+      const proof2 = ethers.keccak256(ethers.toUtf8Bytes("vault-receipt-002"));
+      await expect(
+        trcGold.connect(reserve).mint(user1.address, 1n, proof2)
+      ).to.be.revertedWithCustomError(walletCap, "CapExceeded");
+    });
+
+    it("auditFreeze blocks transfers (whenNotPaused on _update)", async () => {
+      await trcGold.connect(reserve).mint(user1.address, ONE_GRAM, DEPOSIT_PROOF);
+      await trcGold.connect(auditor).auditFreeze();
+      await expect(
+        trcGold.connect(user1).transfer(user2.address, ONE_GRAM)
+      ).to.be.revertedWithCustomError(trcGold, "EnforcedPause");
+    });
+  });
 });

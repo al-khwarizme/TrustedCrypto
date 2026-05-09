@@ -273,12 +273,12 @@ Areas especially needing help:
 
 The full design rationale — economic model, governance structure, security analysis, asset backing, and technical architecture — is in **[whitepaper.md](./whitepaper.md)**.
 
-*White Paper v0.1 · May 2026 · Authored under the name Al-Khwarizmi*
+*White Paper v0.1 · May 2026 · Authored under the name Al-Khwarizme*
 
 ---
 
 ## License
 
-[MIT](./LICENSE) — Copyright © 2026 Al-Khwarizmi
+[MIT](./LICENSE) — Copyright © 2026 Al-Khwarizme
 
 Free to use, fork, modify, and distribute. This project belongs to everyone.
